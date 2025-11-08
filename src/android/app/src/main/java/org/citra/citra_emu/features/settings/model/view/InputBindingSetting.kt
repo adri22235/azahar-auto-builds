@@ -163,6 +163,7 @@ class InputBindingSetting(
     fun removeOldMapping() {
         // Try remove all possible keys we wrote for this setting
         val oldKey = preferences.getString(reverseKey, "")
+        (setting as AbstractStringSetting).string = ""
         if (oldKey != "") {
             (setting as AbstractStringSetting).string = ""
             preferences.edit()
