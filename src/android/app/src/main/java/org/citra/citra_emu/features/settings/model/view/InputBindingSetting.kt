@@ -16,6 +16,7 @@ import org.citra.citra_emu.NativeLibrary
 import org.citra.citra_emu.R
 import org.citra.citra_emu.features.hotkeys.Hotkey
 import org.citra.citra_emu.features.settings.model.AbstractSetting
+import org.citra.citra_emu.features.settings.model.AbstractStringSetting
 import org.citra.citra_emu.features.settings.model.Settings
 
 class InputBindingSetting(
@@ -127,6 +128,7 @@ class InputBindingSetting(
                 Settings.KEY_BUTTON_DOWN -> NativeLibrary.ButtonType.DPAD_DOWN
                 Settings.KEY_BUTTON_LEFT -> NativeLibrary.ButtonType.DPAD_LEFT
                 Settings.KEY_BUTTON_RIGHT -> NativeLibrary.ButtonType.DPAD_RIGHT
+                Settings.HOTKEY_ENABLE -> Hotkey.ENABLE.button
                 Settings.HOTKEY_SCREEN_SWAP -> Hotkey.SWAP_SCREEN.button
                 Settings.HOTKEY_CYCLE_LAYOUT -> Hotkey.CYCLE_LAYOUT.button
                 Settings.HOTKEY_CLOSE_GAME -> Hotkey.CLOSE_GAME.button
@@ -162,12 +164,21 @@ class InputBindingSetting(
         // Try remove all possible keys we wrote for this setting
         val oldKey = preferences.getString(reverseKey, "")
         if (oldKey != "") {
+            (setting as AbstractStringSetting).string = ""
             preferences.edit()
                 .remove(abstractSetting.key) // Used for ui text
-                .remove(oldKey) // Used for button mapping
                 .remove(oldKey + "_GuestOrientation") // Used for axis orientation
                 .remove(oldKey + "_GuestButton") // Used for axis button
-                .apply()
+                .remove(reverseKey)
+            val buttonCodes = try {
+                preferences.getStringSet(oldKey, mutableSetOf<String>())!!.toMutableSet()
+            } catch (e: ClassCastException) {
+                // if this is an int pref, either old button or an axis, so just remove it
+                preferences.edit().remove(oldKey).apply()
+                return;
+            }
+            buttonCodes.remove(buttonCode.toString());
+            preferences.edit().putStringSet(oldKey,buttonCodes).apply()
         }
     }
 
@@ -177,18 +188,26 @@ class InputBindingSetting(
     private fun writeButtonMapping(key: String) {
         val editor = preferences.edit()
 
-        // Remove mapping for another setting using this input
-        val oldButtonCode = preferences.getInt(key, -1)
-        if (oldButtonCode != -1) {
-            val oldKey = getButtonKey(oldButtonCode)
-            editor.remove(oldKey) // Only need to remove UI text setting, others will be overwritten
+        // Pull in all codes associated with this key
+        // Migrate from the old int preference if need be
+        val buttonCodes = try {
+            preferences.getStringSet(key, mutableSetOf<String>())!!.toMutableSet()
+        } catch (e: ClassCastException) {
+            // Migration: the old Int is still there
+            val prefInt = preferences.getInt(key, -1);
+            editor.remove(key).apply();
+            val migratedSet = if (prefInt != -1) {
+                mutableSetOf(prefInt.toString())
+            } else {
+                mutableSetOf<String>()
+            }
+            migratedSet
         }
-
+        buttonCodes.add(buttonCode.toString())
         // Cleanup old mapping for this setting
         removeOldMapping()
 
-        // Write new mapping
-        editor.putInt(key, buttonCode)
+        editor.putStringSet(key, buttonCodes)
 
         // Write next reverse mapping for future cleanup
         editor.putString(reverseKey, key)
