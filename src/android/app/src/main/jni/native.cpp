@@ -365,6 +365,11 @@ void Java_org_citra_citra_1emu_NativeLibrary_secondarySurfaceChanged(JNIEnv* env
     if (secondary_window) {
         // Second window already created, so update it
         notify = secondary_window->OnSurfaceChanged(s_secondary_surface);
+
+        // Log the dimensions for debugging
+        int32_t width = ANativeWindow_getWidth(s_secondary_surface);
+        int32_t height = ANativeWindow_getHeight(s_secondary_surface);
+        LOG_INFO(Frontend, "Secondary Surface changed to {}x{}", width, height);
     } else {
         LOG_WARNING(Frontend,
                     "Second Window does not exist in native.cpp but surface changed. Ignoring.");
@@ -655,6 +660,25 @@ void Java_org_citra_citra_1emu_NativeLibrary_onTouchMoved([[maybe_unused]] JNIEn
                                                           [[maybe_unused]] jobject obj, jfloat x,
                                                           jfloat y) {
     window->OnTouchMoved((int)x, (int)y);
+}
+
+jboolean Java_org_citra_citra_1emu_NativeLibrary_onSecondaryTouchEvent([[maybe_unused]] JNIEnv* env,
+                                                                       [[maybe_unused]] jobject obj,
+                                                                       jfloat x, jfloat y,
+                                                                       jboolean pressed) {
+    if (!secondary_window) {
+        return JNI_FALSE;
+    }
+    return static_cast<jboolean>(secondary_window->OnTouchEvent(
+        static_cast<int>(x + 0.5), static_cast<int>(y + 0.5), pressed));
+}
+
+void Java_org_citra_citra_1emu_NativeLibrary_onSecondaryTouchMoved([[maybe_unused]] JNIEnv* env,
+                                                                   [[maybe_unused]] jobject obj,
+                                                                   jfloat x, jfloat y) {
+    if (secondary_window) {
+        secondary_window->OnTouchMoved((int)x, (int)y);
+    }
 }
 
 jlong Java_org_citra_citra_1emu_NativeLibrary_getTitleId(JNIEnv* env, [[maybe_unused]] jobject obj,
