@@ -98,7 +98,7 @@ void ConfigureHotkeys::Configure(QModelIndex index) {
     }
     const auto [key_sequence_used, used_action] = IsUsedKey(key_sequence);
 
-    // Check for turbo/framerate limit conflict. Needed to prevent the user from binding both 
+    // Check for turbo/framerate limit conflict. Needed to prevent the user from binding both
     // hotkeys to the same action, which causes problems when resetting the frame limit to the
     // initital value
     const QString current_action =
