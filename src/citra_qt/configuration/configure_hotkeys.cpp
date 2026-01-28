@@ -124,7 +124,7 @@ void ConfigureHotkeys::Configure(QModelIndex index) {
         // Show warning if either hotkey is already set
         if (!key_sequence.isEmpty() && !other_sequence.isEmpty()) {
             QMessageBox::warning(this, tr("Conflicting Key Sequence"),
-                                 tr("The per-application speed and turbo speed hotkeys cannot be "
+                                 tr("The frame limit and turbo speed hotkeys cannot be "
                                     "bound at the same time."));
             return;
         }
