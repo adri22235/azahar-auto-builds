@@ -106,8 +106,7 @@ void ConfigureHotkeys::Configure(QModelIndex index) {
     const bool is_frame_limit = current_action == tr("Toggle Framerate Limit");
 
     if (is_turbo || is_frame_limit) {
-        QString other_action =
-            is_turbo ? tr("Toggle Framerate Limit") : tr("Toggle Turbo Mode");
+        QString other_action = is_turbo ? tr("Toggle Framerate Limit") : tr("Toggle Turbo Mode");
         QKeySequence other_sequence;
 
         for (int r = 0; r < model->rowCount(); ++r) {
