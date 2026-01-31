@@ -4,13 +4,13 @@
 
 #include "common/scm_rev.h"
 
-#define GIT_REV      "@GIT_REV@"
-#define GIT_BRANCH   "@GIT_BRANCH@"
-#define GIT_DESC     "@GIT_DESC@"
-#define BUILD_NAME   "@REPO_NAME@"
-#define BUILD_DATE   "@BUILD_DATE@"
-#define BUILD_VERSION "@BUILD_VERSION@"
-#define BUILD_FULLNAME "@BUILD_FULLNAME@"
+#define GIT_REV      "2125-Stable"
+#define GIT_BRANCH   "master"
+#define GIT_DESC     "Milestone 2125"
+#define BUILD_NAME   "Azahar"
+#define BUILD_DATE   "2026-01-27"
+#define BUILD_VERSION "2125"
+#define BUILD_FULLNAME "Azahar Milestone 2125"
 #define SHADER_CACHE_VERSION "@SHADER_CACHE_VERSION@"
 
 namespace Common {
