@@ -5,6 +5,7 @@ if [[ "$TARGET" == "appimage"* ]]; then
     if [ "$(uname -m)" = "aarch64" ]; then
         export EXTRA_CMAKE_FLAGS=(-DCMAKE_CXX_COMPILER=g++
                                   -DCMAKE_C_COMPILER=gcc
+                                  -DCMAKE_CXX_FLAGS="-Wno-error"
                                   -DENABLE_ROOM_STANDALONE=OFF)
     else
         LINKER_PATH="/etc/bin/ld.lld"
