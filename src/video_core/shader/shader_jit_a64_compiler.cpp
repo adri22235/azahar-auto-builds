@@ -1001,7 +1001,7 @@ void JitShader::Compile(const std::array<u32, MAX_PROGRAM_CODE_LENGTH>* program_
     // Copy to executable memory
     const size_t code_size = code_vec.size() * sizeof(u32);
 
-    code_mem = std::make_unique<oaknut::CodeBlock>(code_size);
+    code_mem = std::unique_ptr<oaknut::CodeBlock>(new oaknut::CodeBlock(code_size));
     code_mem->unprotect();
 
     program = reinterpret_cast<CompiledShader*>(reinterpret_cast<std::byte*>(code_mem->ptr()) +
