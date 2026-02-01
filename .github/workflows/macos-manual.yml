@@ -1,0 +1,45 @@
+name: Build macOS (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build'
+        required: true
+        default: '2125'
+
+jobs:
+  macos-build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Azahar
+        uses: actions/checkout@v4
+        with:
+          repository: azahar-emu/azahar
+          ref: ${{ github.event.inputs.tag }}
+          submodules: recursive
+
+      - name: Install dependencies
+        run: brew install ccache ninja qt6
+
+      - name: Build
+        run: |
+          mkdir build && cd build
+          cmake .. -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_QT_TRANSLATION=ON \
+            -DUSE_DISCORD_PRESENCE=ON \
+            -DCMAKE_PREFIX_PATH=$(brew --prefix qt6)
+          ninja bundle
+          mv bundle/azahar.app bundle/Azahar.app
+
+      - name: Package
+        run: |
+          # Create a ZIP for the .app
+          cd build/bundle
+          zip -r ../../azahar-${{ github.event.inputs.tag }}-macos.zip Azahar.app
+
+      - name: Upload to Release
+        run: gh release upload ${{ github.event.inputs.tag }} azahar-${{ github.event.inputs.tag }}-macos.zip --repo adri22235/azahar-auto-builds || echo "Release not found or upload failed"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
