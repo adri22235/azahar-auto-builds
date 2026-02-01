@@ -93,7 +93,7 @@ jobs:
         if: ${{ env.SHOULD_RUN == 'true' }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake ninja-build pkg-config clang lld ccache git libssl-dev libsdl2-dev qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl1-mesa-dev libwayland-dev libxkbcommon-dev qt6-multimedia-dev qt6-l10n-tools
+          sudo apt-get install -y build-essential cmake ninja-build pkg-config clang lld ccache git libssl-dev libsdl2-dev qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl1-mesa-dev libwayland-dev libxkbcommon-dev qt6-multimedia-dev qt6-l10n-tools qt6-tools-dev qt6-tools-dev-tools
       - name: Set up cache
         if: ${{ env.SHOULD_RUN == 'true' }}
         uses: actions/cache@v4
