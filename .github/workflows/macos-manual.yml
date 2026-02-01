@@ -28,7 +28,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DENABLE_QT_TRANSLATION=ON \
             -DUSE_DISCORD_PRESENCE=ON \
-            -DCMAKE_PREFIX_PATH=$(brew --prefix qt6)
+            -DCMAKE_PREFIX_PATH=$(brew --prefix qt6) \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0
           ninja bundle
           mv bundle/azahar.app bundle/Azahar.app
 
