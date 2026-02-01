@@ -21,6 +21,10 @@ jobs:
       - name: Install dependencies
         run: brew install ccache ninja qt6
 
+      - name: Patch Deployment Target
+        run: |
+          sed -i '' 's/set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0")/set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0")/g' CMakeLists.txt
+
       - name: Build
         run: |
           mkdir build && cd build
