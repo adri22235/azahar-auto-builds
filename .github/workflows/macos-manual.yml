@@ -15,9 +15,8 @@ jobs:
       - name: Checkout Azahar
         uses: actions/checkout@v4
         with:
-          repository: azahar-emu/azahar
-          ref: ${{ github.event.inputs.tag }}
           submodules: recursive
+          ref: ${{ github.event.inputs.tag }}
 
       - name: Install dependencies
         run: brew install ccache ninja qt6
