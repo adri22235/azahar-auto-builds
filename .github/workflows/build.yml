@@ -71,6 +71,50 @@ jobs:
           name: ${{ env.OS }}-${{ env.TARGET }}
           path: artifacts/
 
+  linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ["appimage", "fresh"]
+    container:
+      image: opensauce04/azahar-build-environment:latest
+      options: -u 1001
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_COMPILERCHECK: content
+      CCACHE_SLOPPINESS: time_macros
+      OS: linux
+      TARGET: ${{ matrix.target }}
+      SHOULD_RUN: ${{ github.ref_type == 'tag' || github.event_name == 'pull_request' || github.ref == 'refs/heads/master' }}
+    steps:
+      - uses: actions/checkout@v4
+        if: ${{ env.SHOULD_RUN == 'true' }}
+        with:
+          submodules: recursive
+      - name: Set up cache
+        if: ${{ env.SHOULD_RUN == 'true' }}
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ runner.os }}-arm64-${{ matrix.target }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-arm64-${{ matrix.target }}-
+      - name: Build
+        if: ${{ env.SHOULD_RUN == 'true' }}
+        run: ./.ci/linux.sh
+      - name: Move AppImage to artifacts directory
+        if: ${{ contains(matrix.target, 'appimage') && env.SHOULD_RUN == 'true' }}
+        run: |
+          mkdir -p artifacts
+          mv build/bundle/*.AppImage artifacts/
+      - name: Upload
+        if: ${{ contains(matrix.target, 'appimage') && env.SHOULD_RUN == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.OS }}-arm64-${{ env.TARGET }}
+          path: artifacts/
+
   macos:
     runs-on: ${{ (matrix.target == 'x86_64' && 'macos-15-intel') || 'macos-26' }}
     strategy:
