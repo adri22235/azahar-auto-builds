@@ -2,9 +2,13 @@
 
 if [[ "$TARGET" == "appimage"* ]]; then
     # Compile the AppImage we distribute with Clang.
+    LINKER_PATH="/etc/bin/ld.lld"
+    if [ ! -f "$LINKER_PATH" ]; then
+        LINKER_PATH="lld"
+    fi
     export EXTRA_CMAKE_FLAGS=(-DCMAKE_CXX_COMPILER=clang++
                               -DCMAKE_C_COMPILER=clang
-                              -DCMAKE_LINKER=/etc/bin/ld.lld
+                              -DCMAKE_LINKER=$LINKER_PATH
                               -DENABLE_ROOM_STANDALONE=OFF)
     if [ "$TARGET" = "appimage-wayland" ]; then
         # Bundle required QT wayland libraries

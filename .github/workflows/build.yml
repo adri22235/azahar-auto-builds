@@ -77,9 +77,6 @@ jobs:
       fail-fast: false
       matrix:
         target: ["appimage", "fresh"]
-    container:
-      image: opensauce04/azahar-build-environment:latest
-      options: -u 1001
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_COMPILERCHECK: content
@@ -92,6 +89,11 @@ jobs:
         if: ${{ env.SHOULD_RUN == 'true' }}
         with:
           submodules: recursive
+      - name: Install dependencies
+        if: ${{ env.SHOULD_RUN == 'true' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build pkg-config clang lld ccache git libssl-dev libsdl2-dev qt6-base-dev qt6-base-dev-tools libqt6opengl6-dev libgl1-mesa-dev libwayland-dev libxkbcommon-dev
       - name: Set up cache
         if: ${{ env.SHOULD_RUN == 'true' }}
         uses: actions/cache@v4
