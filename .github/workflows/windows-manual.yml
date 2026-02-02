@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to build'
+        description: 'Git tag/branch to build'
         required: true
         default: '2125'
 
@@ -31,21 +31,13 @@ jobs:
         if: ${{ matrix.target == 'msvc' }}
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Install Qt6 (MSVC)
+      - name: Install extra tools (MSVC)
         if: ${{ matrix.target == 'msvc' }}
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.6.0'
-          host: 'windows'
-          target: 'desktop'
-          arch: 'win64_msvc2019_64'
-          dir: '${{ github.workspace }}/qt'
+        run: choco install ccache ninja ptime wget
 
       - name: Install vulkan-sdk (MSVC)
         if: ${{ matrix.target == 'msvc' }}
-        shell: pwsh
         run: |
-          mkdir -p D:/a/_temp
           wget https://sdk.lunarg.com/sdk/download/1.3.296.0/windows/VulkanSDK-1.3.296.0-Installer.exe -O D:/a/_temp/vulkan.exe
           D:/a/_temp/vulkan.exe --accept-licenses --default-answer --confirm-command install
 
@@ -60,39 +52,24 @@ jobs:
             toolchain:p ccache:p cmake:p ninja:p spirv-tools:p
             qt6-base:p qt6-multimedia:p qt6-multimedia-wmf:p qt6-tools:p qt6-translations:p
 
-      - name: Install extra tools (MSVC)
-        if: ${{ matrix.target == 'msvc' }}
-        run: choco install ccache ninja ptime wget
-
-      - name: Set up cache
-        uses: actions/cache@v4
+      - name: Install extra tools (MSYS2)
+        if: ${{ matrix.target == 'msys2' }}
+        uses: crazy-max/ghaction-chocolatey@v3
         with:
-          path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-${{ matrix.target }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.target }}-
+          args: install ptime wget
 
       - name: Build
-        run: |
-          mkdir build && cd build
-          CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release -DENABLE_QT_TRANSLATION=ON -DUSE_DISCORD_PRESENCE=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
-          if [ "${{ matrix.target }}" == "msvc" ]; then
-            CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_PREFIX_PATH=${{ github.workspace }}/qt/6.6.0/msvc2019_64"
-          fi
-          cmake .. -GNinja $CMAKE_FLAGS
-          ninja bundle
-          # Renaming for clarity
-          [ -f bundle/azahar.exe ] && mv bundle/azahar.exe bundle/Azahar-${{ matrix.target }}.exe
-          [ -f bundle/azahar-qt.exe ] && mv bundle/azahar-qt.exe bundle/Azahar-${{ matrix.target }}.exe
-          [ -f bundle/azahar-room.exe ] && mv bundle/azahar-room.exe bundle/Azahar-room-${{ matrix.target }}.exe
-          ls -l bundle/*.exe
+        run: ./.ci/windows.sh
 
-      - name: Package
-        run: |
-          cd build/bundle
-          7z a ../../azahar-${{ github.event.inputs.tag }}-windows-${{ matrix.target }}.zip *
+      - name: Pack
+        run: ./.ci/pack.sh
 
       - name: Upload to Release
-        run: gh release upload ${{ github.event.inputs.tag }} azahar-${{ github.event.inputs.tag }}-windows-${{ matrix.target }}.zip --repo ${{ github.repository }} --clobber
+        run: |
+          $TAG = "${{ github.event.inputs.tag }}"
+          foreach ($file in Get-ChildItem artifacts/*) {
+            gh release upload $TAG $file.FullName --repo adri22235/azahar-auto-builds --clobber
+          }
+        shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
