@@ -53,10 +53,11 @@ jobs:
             toolchain:p ccache:p cmake:p ninja:p spirv-tools:p
             qt6-base:p qt6-multimedia:p qt6-multimedia-wmf:p qt6-tools:p qt6-translations:p
 
-      - name: Patch fmt for MSYS2
+      - name: Patch fmt and file_util for MSYS2
         if: ${{ matrix.target == 'msys2' }}
         run: |
           sed -i '1i#include <cstdlib>' externals/fmt/include/fmt/format.h
+          sed -i 's/#ifndef __MINGW64__/#if 1 \/\/ PATCHED FOR MSYS2/g' src/common/file_util.cpp
 
       - name: Install extra tools (MSYS2)
         if: ${{ matrix.target == 'msys2' }}
