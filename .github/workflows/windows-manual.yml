@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.tag }}
-          submodules: recursive
+          path: src
 
       - name: Set up MSVC
         if: ${{ matrix.target == 'msvc' }}
@@ -66,10 +66,52 @@ jobs:
           args: install ptime wget
 
       - name: Build
-        run: ./.ci/windows.sh
+        run: cd src && ./.ci/windows.sh
+
+      - name: Create Installer
+        shell: cmd
+        run: |
+          echo !include "MUI2.nsh" > installer.nsi
+          echo Name "Azahar Emulator" >> installer.nsi
+          echo OutFile "Azahar-Setup.exe" >> installer.nsi
+          echo Unicode True >> installer.nsi
+          echo InstallDir "$LOCALAPPDATA\Azahar" >> installer.nsi
+          echo InstallDirRegKey HKCU "Software\Azahar" "" >> installer.nsi
+          echo RequestExecutionLevel user >> installer.nsi
+          echo !define MUI_ABORTWARNING >> installer.nsi
+          echo !define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico" >> installer.nsi
+          echo !insertmacro MUI_PAGE_WELCOME >> installer.nsi
+          echo !insertmacro MUI_PAGE_LICENSE "src\license.txt" >> installer.nsi
+          echo !insertmacro MUI_PAGE_DIRECTORY >> installer.nsi
+          echo !insertmacro MUI_PAGE_INSTFILES >> installer.nsi
+          echo !insertmacro MUI_PAGE_FINISH >> installer.nsi
+          echo !insertmacro MUI_UNPAGE_CONFIRM >> installer.nsi
+          echo !insertmacro MUI_UNPAGE_INSTFILES >> installer.nsi
+          echo !insertmacro MUI_LANGUAGE "English" >> installer.nsi
+          echo Section "Azahar" SecAzahar >> installer.nsi
+          echo   SetOutPath "$INSTDIR" >> installer.nsi
+          echo   File /r "src\build\bundle\*" >> installer.nsi
+          echo   WriteUninstaller "$INSTDIR\Uninstall.exe" >> installer.nsi
+          echo   CreateDirectory "$SMPROGRAMS\Azahar" >> installer.nsi
+          echo   CreateShortcut "$SMPROGRAMS\Azahar\Azahar.lnk" "$INSTDIR\azahar-qt.exe" >> installer.nsi
+          echo   CreateShortcut "$SMPROGRAMS\Azahar\Uninstall.lnk" "$INSTDIR\Uninstall.exe" >> installer.nsi
+          echo   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Azahar" "DisplayName" "Azahar Emulator" >> installer.nsi
+          echo   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Azahar" "UninstallString" "$\"$INSTDIR\Uninstall.exe$\"" >> installer.nsi
+          echo   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Azahar" "DisplayIcon" "$INSTDIR\azahar-qt.exe" >> installer.nsi
+          echo   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Azahar" "Publisher" "Azahar Team" >> installer.nsi
+          echo SectionEnd >> installer.nsi
+          echo Section "Uninstall" >> installer.nsi
+          echo   RMDir /r "$INSTDIR" >> installer.nsi
+          echo   RMDir /r "$SMPROGRAMS\Azahar" >> installer.nsi
+          echo   DeleteRegKey HKCU "Software\Azahar" >> installer.nsi
+          echo   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Azahar" >> installer.nsi
+          echo SectionEnd >> installer.nsi
+          
+          makensis installer.nsi
+          move Azahar-Setup.exe artifacts\Azahar-Setup-%TARGET%.exe
 
       - name: Pack
-        run: ./.ci/pack.sh
+        run: cd src && ./.ci/pack.sh
 
       - name: Upload to Release
         run: |
