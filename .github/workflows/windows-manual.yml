@@ -17,7 +17,7 @@ jobs:
         target: ["msvc", "msys2"]
     defaults:
       run:
-        shell: ${{ (matrix.target == 'msys2' && 'msys2') || 'bash' }} {0}
+        shell: bash
     env:
       OS: windows
       TARGET: ${{ matrix.target }}
@@ -73,6 +73,7 @@ jobs:
           args: install ptime wget
 
       - name: Build
+        shell: ${{ (matrix.target == 'msys2' && 'msys2') || 'bash' }} {0}
         run: cd src && ./.ci/windows.sh
 
       - name: Create Installer
@@ -119,6 +120,7 @@ jobs:
           move Azahar-Setup.exe artifacts\Azahar-Setup-%TARGET%.exe
 
       - name: Pack
+        shell: ${{ (matrix.target == 'msys2' && 'msys2') || 'bash' }} {0}
         run: cd src && ./.ci/pack.sh
 
       - name: Upload to Release
