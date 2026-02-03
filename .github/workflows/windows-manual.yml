@@ -30,6 +30,11 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Ensure Submodules are Initialized
+        run: |
+          cd src
+          git submodule update --init --recursive
+
       - name: Set up MSVC
         if: ${{ matrix.target == 'msvc' }}
         uses: ilammy/msvc-dev-cmd@v1
