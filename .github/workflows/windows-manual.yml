@@ -27,6 +27,8 @@ jobs:
         with:
           ref: ${{ github.event.inputs.tag }}
           path: src
+          submodules: recursive
+          fetch-depth: 0
 
       - name: Set up MSVC
         if: ${{ matrix.target == 'msvc' }}
@@ -56,8 +58,8 @@ jobs:
       - name: Patch fmt and file_util for MSYS2
         if: ${{ matrix.target == 'msys2' }}
         run: |
-          sed -i '1i#include <cstdlib>' externals/fmt/include/fmt/format.h
-          sed -i '/namespace FileUtil/i #define stat _stat64\n#define fstat _fstat64' src/common/file_util.cpp
+          sed -i '1i#include <cstdlib>' src/externals/fmt/include/fmt/format.h
+          sed -i '/namespace FileUtil/i #define stat _stat64\n#define fstat _fstat64' src/src/common/file_util.cpp
 
       - name: Install extra tools (MSYS2)
         if: ${{ matrix.target == 'msys2' }}
@@ -108,6 +110,7 @@ jobs:
           echo SectionEnd >> installer.nsi
           
           makensis installer.nsi
+          mkdir -p artifacts
           move Azahar-Setup.exe artifacts\Azahar-Setup-%TARGET%.exe
 
       - name: Pack
