@@ -10,6 +10,7 @@
 #include <array>
 #include <bitset>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -65,6 +66,7 @@ public:
     void Compile_MOV(Instruction instr);
     void Compile_NOP(Instruction instr);
     void Compile_END(Instruction instr);
+    void Compile_BREAK(Instruction instr);
     void Compile_BREAKC(Instruction instr);
     void Compile_CALL(Instruction instr);
     void Compile_CALLC(Instruction instr);
