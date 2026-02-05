@@ -9,18 +9,14 @@ on:
         default: 'manual-build'
 
 jobs:
-  windows:
+  windows-msvc:
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target: ["msvc", "msys2"]
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_COMPILERCHECK: content
       CCACHE_SLOPPINESS: time_macros
       OS: windows
-      TARGET: ${{ matrix.target }}
+      TARGET: msvc
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,24 +25,64 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.CCACHE_DIR }}
-          key: ${{ runner.os }}-${{ matrix.target }}-${{ github.sha }}
+          key: ${{ runner.os }}-msvc-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.target }}-
+            ${{ runner.os }}-msvc-
       - name: Set up MSVC
-        if: ${{ matrix.target == 'msvc' }}
         uses: ilammy/msvc-dev-cmd@v1
       - name: Install extra tools (MSVC)
-        if: ${{ matrix.target == 'msvc' }}
-        shell: bash
         run: choco install ccache ninja ptime wget
       - name: Install vulkan-sdk (MSVC)
-        if: ${{ matrix.target == 'msvc' }}
-        shell: bash
         run: |
           wget https://sdk.lunarg.com/sdk/download/1.4.304.1/windows/VulkanSDK-1.4.304.1-Installer.exe -O D:/a/_temp/vulkan.exe
           D:/a/_temp/vulkan.exe --accept-licenses --default-answer --confirm-command install
+      - name: Install NSIS
+        run: |
+          wget https://download.sourceforge.net/project/nsis/NSIS%203/3.11/nsis-3.11-setup.exe -O D:/a/_temp/nsis-setup.exe
+          ptime D:/a/_temp/nsis-setup.exe /S
+        shell: pwsh
+      - name: Disable line ending translation
+        run: git config --global core.autocrlf input
+      - name: Build
+        run: ./.ci/windows.sh
+      - name: Generate installer
+        run: |
+          cd src\installer
+          "C:\Program Files (x86)\NSIS\makensis.exe" /DPRODUCT_VARIANT=msvc /DPRODUCT_VERSION=${{ github.event.inputs.version }} citra.nsi
+          mkdir ..\..\artifacts 2> NUL
+          move /y *.exe ..\..\artifacts\
+        shell: cmd
+      - name: Pack
+        run: ./.ci/pack.sh
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msvc-installer
+          path: artifacts/
+
+  windows-msys2:
+    runs-on: windows-latest
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_COMPILERCHECK: content
+      CCACHE_SLOPPINESS: time_macros
+      OS: windows
+      TARGET: msys2
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Set up cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ runner.os }}-msys2-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-msys2-
       - name: Set up MSYS2
-        if: ${{ matrix.target == 'msys2' }}
         uses: msys2/setup-msys2@v2
         with:
           msystem: clang64
@@ -56,7 +92,6 @@ jobs:
             toolchain:p ccache:p cmake:p ninja:p spirv-tools:p
             qt6-base:p qt6-multimedia:p qt6-multimedia-wmf:p qt6-tools:p qt6-translations:p
       - name: Install extra tools (MSYS2)
-        if: ${{ matrix.target == 'msys2' }}
         uses: crazy-max/ghaction-chocolatey@v3
         with:
           args: install ptime wget
@@ -66,23 +101,19 @@ jobs:
           ptime D:/a/_temp/nsis-setup.exe /S
         shell: pwsh
       - name: Disable line ending translation
-        shell: bash
         run: git config --global core.autocrlf input
       - name: Build
-        shell: ${{ (matrix.target == 'msys2' && 'msys2') || 'bash' }} {0}
         run: ./.ci/windows.sh
       - name: Generate installer
         run: |
-          cd src\installer
-          "C:\Program Files (x86)\NSIS\makensis.exe" /DPRODUCT_VARIANT=${{ matrix.target }} /DPRODUCT_VERSION=${{ github.event.inputs.version }} citra.nsi
-          mkdir ..\..\artifacts 2> NUL
-          move /y *.exe ..\..\artifacts\
-        shell: cmd
+          cd src/installer
+          "/C/Program Files (x86)/NSIS/makensis.exe" /DPRODUCT_VARIANT=msys2 /DPRODUCT_VERSION=${{ github.event.inputs.version }} citra.nsi
+          mkdir -p ../../artifacts
+          mv *.exe ../../artifacts/
       - name: Pack
-        shell: ${{ (matrix.target == 'msys2' && 'msys2') || 'bash' }} {0}
         run: ./.ci/pack.sh
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.OS }}-${{ env.TARGET }}-installer
+          name: windows-msys2-installer
           path: artifacts/
