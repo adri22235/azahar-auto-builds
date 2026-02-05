@@ -15,9 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         target: ["msvc", "msys2"]
-    defaults:
-      run:
-        shell: ${{ (matrix.target == 'msys2' && 'msys2') || 'bash' }} {0}
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_COMPILERCHECK: content
@@ -40,9 +37,11 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
       - name: Install extra tools (MSVC)
         if: ${{ matrix.target == 'msvc' }}
+        shell: bash
         run: choco install ccache ninja ptime wget
       - name: Install vulkan-sdk (MSVC)
         if: ${{ matrix.target == 'msvc' }}
+        shell: bash
         run: |
           wget https://sdk.lunarg.com/sdk/download/1.4.304.1/windows/VulkanSDK-1.4.304.1-Installer.exe -O D:/a/_temp/vulkan.exe
           D:/a/_temp/vulkan.exe --accept-licenses --default-answer --confirm-command install
@@ -67,8 +66,10 @@ jobs:
           ptime D:/a/_temp/nsis-setup.exe /S
         shell: pwsh
       - name: Disable line ending translation
+        shell: bash
         run: git config --global core.autocrlf input
       - name: Build
+        shell: ${{ (matrix.target == 'msys2' && 'msys2') || 'bash' }} {0}
         run: ./.ci/windows.sh
       - name: Generate installer
         run: |
@@ -78,6 +79,7 @@ jobs:
           move /y *.exe ..\..\artifacts\
         shell: cmd
       - name: Pack
+        shell: ${{ (matrix.target == 'msys2' && 'msys2') || 'bash' }} {0}
         run: ./.ci/pack.sh
       - name: Upload
         uses: actions/upload-artifact@v4
